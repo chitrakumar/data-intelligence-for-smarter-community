@@ -1,4 +1,5 @@
 # Modified November 2026 by Hayley Horn for the TAMU Datathon: UBC campus data and references replaced with Texas A&M University campus data from OpenStreetMap (ODbL).
+# Modified November 2026: campus-specific values moved to Includes/campuses/<slug>/campus.json.
 """
 Smart Community Testbed - Consolidated Data Generator
 ===================================================================
@@ -7,8 +8,11 @@ Generates all 11 tables for the workshop in a single reusable module.
 Engine: pandas + NumPy -> spark.createDataFrame with EXPLICIT StructType.
 
 Entry point:
-    generate_all(spark, catalog, schema, scale=0.15, seed=42, geojson_dir=None)
+    generate_telemetry(spark, catalog, schema, scale=0.15, seed=42, campus="tamu")
         -> returns dict {table_name: row_count}
+
+Campus: every campus-specific value (bbox, map center, data window, landmark zones,
+cell sites, geodata) comes from Includes/campuses/<slug>/ via campus_config.py.
 
 Tables produced:
   1. dim_buildings (38 rows, fixed)
@@ -24,8 +28,7 @@ Tables produced:
  11. udl_campus_metrics (~1.95K at scale=0.15, ~13K at full scale)
 
 Seed: deterministic per scale, matching the reference build.
-Time window: 30 days from 2026-04-16.
-Geospatial: Texas A&M campus bbox 30.59-30.632N / -96.370 to -96.322W.
+Time window + geospatial bbox: from the campus profile (campus.json).
 """
 
 import hashlib
@@ -47,16 +50,6 @@ from pyspark.sql.types import (
 # Configuration + Constants
 # ============================================================================
 SEED = 42
-NOW = np.datetime64("2026-11-06T00:00:00")
-WINDOW_START = NOW - np.timedelta64(30, "D")
-WINDOW_SECONDS = int((NOW - WINDOW_START).astype("timedelta64[s]").astype(int))
-
-STUDY_CRUNCH_START = np.datetime64("2026-10-26T00:00:00")
-STUDY_CRUNCH_END = np.datetime64("2026-11-01T23:59:59")
-
-# Texas A&M campus bounding box
-CAMPUS_LAT_MIN, CAMPUS_LAT_MAX = 30.5900, 30.6320
-CAMPUS_LON_MIN, CAMPUS_LON_MAX = -96.3700, -96.3220
 
 # Full-scale row counts (before scale factor applied)
 FULL_SCALE_ACCESS_EVENTS = 600_000
@@ -67,39 +60,46 @@ FULL_SCALE_CONNECTIVITY = 400_000
 FULL_SCALE_GATEWAY = 270_000
 FULL_SCALE_UDL = 13_000
 
-# Zone definitions (16 fixed zones on campus)
-CAMPUS_ZONES = [
-    ("ZONE_01", "Memorial Student Center",       "transit",     30.6125, -96.3418),
-    ("ZONE_02", "Sterling C. Evans Library",     "academic",    30.6169, -96.3391),
-    ("ZONE_03", "Academic Building",             "academic",    30.6158, -96.3409),
-    ("ZONE_04", "Student Recreation Center",     "recreational",30.6071, -96.3429),
-    ("ZONE_05", "Zachry Engineering Education Complex","academic",30.6214, -96.3404),
-    ("ZONE_06", "Reed Arena",                    "recreational",30.6058, -96.3461),
-    ("ZONE_07", "Kyle Field",                    "recreational",30.6099, -96.3405),
-    ("ZONE_08", "College Main Parking Garage Stop","transit",   30.6195, -96.3468),
-    ("ZONE_09", "The Commons",                   "residential", 30.6152, -96.3359),
-    ("ZONE_10", "Veterinary Teaching Hospital",  "academic",    30.6129, -96.3531),
-    ("ZONE_11", "Military Walk",                 "outdoor",     30.6151, -96.3417),
-    ("ZONE_12", "Century Tree",                  "outdoor",     30.6159, -96.3414),
-    ("ZONE_13", "Simpson Drill Field",           "outdoor",     30.6136, -96.3428),
-    ("ZONE_14", "Aggie Bonfire Memorial",        "outdoor",     30.6227, -96.3352),
-    ("ZONE_15", "Aggie Park",                    "outdoor",     30.6098, -96.3370),
-    ("ZONE_16", "White Creek Transit",           "transit",     30.6067, -96.3566),
-]
+# ---------------------------------------------------------------------------
+# Campus-specific values. Populated from campus.json by apply_campus(); the
+# generator functions below read these module globals at call time.
+# ---------------------------------------------------------------------------
+CAMPUS: Dict = {}
+NOW = WINDOW_START = STUDY_CRUNCH_START = STUDY_CRUNCH_END = None
+WINDOW_SECONDS = 0
+CAMPUS_LAT_MIN = CAMPUS_LAT_MAX = CAMPUS_LON_MIN = CAMPUS_LON_MAX = 0.0
+CAMPUS_CENTER: Tuple[float, float] = (0.0, 0.0)
+M_PER_DEG_LON = 0.0
+CAMPUS_ZONES: List[Tuple[str, str, str, float, float]] = []   # (zone_id, name, type, lat, lon)
+CELL_SITES: List[Dict] = []                                    # {site_id, name, latitude, longitude}
 
-# Cell sites (10 synthetic locations)
-CELL_SITES = [
-    {"site_id": "SITE_01", "name": "MSC / Rudder Plaza",          "latitude": 30.6132, "longitude": -96.3407},
-    {"site_id": "SITE_02", "name": "Military Walk / Academic Plaza","latitude": 30.6155, "longitude": -96.3410},
-    {"site_id": "SITE_03", "name": "Kyle Field",                  "latitude": 30.6099, "longitude": -96.3405},
-    {"site_id": "SITE_04", "name": "Reed Arena / West Campus Garage","latitude": 30.6080, "longitude": -96.3455},
-    {"site_id": "SITE_05", "name": "Southside / The Commons",     "latitude": 30.6150, "longitude": -96.3355},
-    {"site_id": "SITE_06", "name": "Veterinary Campus",           "latitude": 30.6125, "longitude": -96.3535},
-    {"site_id": "SITE_07", "name": "Northgate",                   "latitude": 30.6190, "longitude": -96.3480},
-    {"site_id": "SITE_08", "name": "Zachry / Northside",          "latitude": 30.6210, "longitude": -96.3410},
-    {"site_id": "SITE_09", "name": "White Creek",                 "latitude": 30.6075, "longitude": -96.3560},
-    {"site_id": "SITE_10", "name": "Research Park",               "latitude": 30.6005, "longitude": -96.3590},
-]
+
+def apply_campus(cfg: Dict) -> None:
+    """Set the module-level campus globals from a loaded campus.json dict."""
+    global CAMPUS, NOW, WINDOW_START, WINDOW_SECONDS, STUDY_CRUNCH_START, STUDY_CRUNCH_END
+    global CAMPUS_LAT_MIN, CAMPUS_LAT_MAX, CAMPUS_LON_MIN, CAMPUS_LON_MAX
+    global CAMPUS_CENTER, M_PER_DEG_LON, CAMPUS_ZONES, CELL_SITES
+    CAMPUS = cfg
+    win = cfg["data_window"]
+    NOW = np.datetime64(win["end"])
+    WINDOW_START = NOW - np.timedelta64(int(win["days"]), "D")
+    WINDOW_SECONDS = int((NOW - WINDOW_START).astype("timedelta64[s]").astype(int))
+    STUDY_CRUNCH_START = np.datetime64(win["study_crunch_start"])
+    STUDY_CRUNCH_END = np.datetime64(win["study_crunch_end"])
+    bb = cfg["map"]["bbox"]
+    CAMPUS_LAT_MIN, CAMPUS_LAT_MAX = float(bb["lat_min"]), float(bb["lat_max"])
+    CAMPUS_LON_MIN, CAMPUS_LON_MAX = float(bb["lon_min"]), float(bb["lon_max"])
+    c = cfg["map"]["center"]
+    CAMPUS_CENTER = (float(c["lat"]), float(c["lon"]))
+    # Metres per degree of longitude shrinks with latitude; override in campus.json if needed.
+    M_PER_DEG_LON = float(cfg["map"].get("meters_per_degree_lon")
+                          or 111_320.0 * math.cos(math.radians(CAMPUS_CENTER[0])))
+    CAMPUS_ZONES = [(z["zone_id"], z["name"], z["type"], float(z["lat"]), float(z["lon"]))
+                    for z in cfg.get("landmark_zones", [])]
+    CELL_SITES = [{"site_id": x["site_id"], "name": x["name"],
+                   "latitude": float(x["lat"]), "longitude": float(x["lon"])}
+                  for x in cfg["cell_sites"]]
+
 
 USAGE_TO_CATEGORY: Dict[str, str] = {
     "Housing": "Residential", "StudentHousing": "Residential",
@@ -151,7 +151,7 @@ def _polygon_centroid(geom: Dict) -> Tuple[float, float]:
     elif gtype == "MultiPolygon" and raw and raw[0]:
         coords = raw[0][0]
     if not coords:
-        return 30.6125, -96.3418
+        return CAMPUS_CENTER
     lons = [c[0] for c in coords]
     lats = [c[1] for c in coords]
     return float(sum(lats) / len(lats)), float(sum(lons) / len(lons))
@@ -170,7 +170,7 @@ def _jitter(lat: np.ndarray, lon: np.ndarray, rng: np.random.Generator,
 def _distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Approximate distance in meters between two lat/lon points."""
     m_per_lat = 111_132.954
-    m_per_lon = 95_800.0  # approx at Texas A&M latitude
+    m_per_lon = M_PER_DEG_LON  # from campus.json (latitude-dependent)
     dy = (lat1 - lat2) * m_per_lat
     dx = (lon1 - lon2) * m_per_lon
     return math.hypot(dx, dy)
@@ -222,8 +222,8 @@ def _load_buildings(geojson_path: Path) -> List[Dict]:
 
 
 def _load_residences(geojson_path: Path) -> List[Dict]:
-    """Load 38 residence complexes from tamu_complexes.geojson."""
-    complexes_path = geojson_path.parent / "tamu_complexes.geojson"
+    """Load residence complexes from the campus complexes.geojson."""
+    complexes_path = geojson_path.parent / "complexes.geojson"
     if not complexes_path.exists():
         return []
     with complexes_path.open("r", encoding="utf-8") as f:
@@ -262,14 +262,14 @@ def _load_residences(geojson_path: Path) -> List[Dict]:
 # ============================================================================
 
 def generate_telemetry(spark, catalog: str, schema: str, scale: float = 0.15,
-                       seed: int = 42, geojson_dir: str = None) -> Dict[str, int]:
+                       seed: int = 42, campus="tamu") -> Dict[str, int]:
     """
     Generate the 9 synthetic *telemetry* Bronze tables for the smart-community testbed.
 
     The two dimension tables (dim_buildings, dim_zones) are intentionally NOT
-    produced here — students build those from the real Texas A&M campus geodata (OpenStreetMap) in Lab 02.
+    produced here — students build those from the real campus geodata (OpenStreetMap) in Lab 02.
     Building references in the telemetry (bldg_uid = TBL10xxx, name, category,
-    coordinates) are drawn from the same tamu_buildings.geojson, so they join
+    coordinates) are drawn from the same campus buildings.geojson, so they join
     cleanly to the dim_buildings the students ingest.
 
     Args:
@@ -278,28 +278,29 @@ def generate_telemetry(spark, catalog: str, schema: str, scale: float = 0.15,
         schema: schema name (e.g., "bronze")
         scale: row count multiplier (0.15 = ~15% of full)
         seed: random seed
-        geojson_dir: path to geojson dir (relative to module if None)
+        campus: campus slug under Includes/campuses/ (e.g. "tamu"), a path to a
+            campus profile directory, or an already-loaded campus.json dict
 
     Returns:
         dict of {table_name: row_count}
     """
+    if not isinstance(campus, dict):
+        from campus_config import load_campus
+        campus = load_campus(campus)
+    apply_campus(campus)
+
     print(f"\n{'=' * 72}")
     print("Smart Community Testbed - Workshop Generator")
     print(f"{'=' * 72}")
+    print(f"Campus: {CAMPUS['name']} ({CAMPUS['slug']})")
     print(f"Catalog: {catalog}.{schema}")
     print(f"Scale: {scale} (full = 1.0)")
     print(f"Seed: {seed}")
     print(f"Window: {WINDOW_START} to {NOW}")
     print()
 
-    # Resolve GeoJSON directory
-    if geojson_dir is None:
-        module_dir = Path(__file__).parent
-        geojson_dir = module_dir / "geojson"
-    else:
-        geojson_dir = Path(geojson_dir)
-
-    buildings_geojson = geojson_dir / "tamu_buildings.geojson"
+    geojson_dir = Path(CAMPUS["_geojson_dir"])
+    buildings_geojson = geojson_dir / "buildings.geojson"
     if not buildings_geojson.exists():
         raise FileNotFoundError(f"GeoJSON not found: {buildings_geojson}")
 
@@ -416,8 +417,8 @@ def _gen_dim_buildings(residences: List[Dict], rng: np.random.Generator) -> pd.D
             "bcom_uid": r.get("bcom_uid", ""),
             "building_name": r.get("name", ""),
             "address": None,
-            "latitude": float(r.get("latitude", 30.6125)),
-            "longitude": float(r.get("longitude", -96.3418)),
+            "latitude": float(r.get("latitude", CAMPUS_CENTER[0])),
+            "longitude": float(r.get("longitude", CAMPUS_CENTER[1])),
             "n_units": int(r.get("estimated_units", 100)),
             "complex_type": "residential",
             "year_built": 2000 + rng.integers(0, 20),
@@ -959,27 +960,12 @@ def _schema_udl_campus_metrics() -> StructType:
 # ============================================================================
 
 def _default_residences() -> List[Dict]:
-    """Fallback residences if tamu_complexes.geojson unavailable."""
+    """Fallback residences if complexes.geojson is unavailable: 38 synthetic
+    residences on a small grid around the campus center."""
+    lat0, lon0 = CAMPUS_CENTER
     return [
-        {"bcom_uid": "TBC10001", "name": "Hart Residence Hall", "usage": "StudentHousing",
-         "gba": 4819, "latitude": 30.614351, "longitude": -96.34057, "estimated_units": 120},
-        {"bcom_uid": "TBC10002", "name": "Walton Residence Hall", "usage": "StudentHousing",
-         "gba": 5260, "latitude": 30.616907, "longitude": -96.345324, "estimated_units": 131},
-        {"bcom_uid": "TBC10003", "name": "Hughes Residence Hall", "usage": "StudentHousing",
-         "gba": 3142, "latitude": 30.615462, "longitude": -96.345181, "estimated_units": 78},
-        {"bcom_uid": "TBC10004", "name": "Appelt Residence Hall", "usage": "StudentHousing",
-         "gba": 7645, "latitude": 30.614301, "longitude": -96.335464, "estimated_units": 191},
-        {"bcom_uid": "TBC10005", "name": "Neeley Residence Hall", "usage": "StudentHousing",
-         "gba": 7201, "latitude": 30.617938, "longitude": -96.344509, "estimated_units": 180},
-        {"bcom_uid": "TBC10006", "name": "Clements Residence Hall", "usage": "StudentHousing",
-         "gba": 6147, "latitude": 30.614414, "longitude": -96.345571, "estimated_units": 153},
-        {"bcom_uid": "TBC10007", "name": "Haas Residence Hall", "usage": "StudentHousing",
-         "gba": 6911, "latitude": 30.615891, "longitude": -96.344655, "estimated_units": 172},
-        {"bcom_uid": "TBC10008", "name": "Schuhmacher Residence Hall", "usage": "StudentHousing",
-         "gba": 3555, "latitude": 30.617127, "longitude": -96.345559, "estimated_units": 88},
-    ] + [
-        {"bcom_uid": f"TBC_OTHER_{i}", "name": f"Building {i}", "usage": "Housing",
-         "gba": 10000 + i*100, "latitude": 30.605 + i*0.0005, "longitude": -96.345 - i*0.0005,
-         "estimated_units": 100 + i*10}
-        for i in range(30)
+        {"bcom_uid": f"RES_{i:03d}", "name": f"Residence {i}", "usage": "StudentHousing",
+         "gba": 4000 + i * 100, "latitude": lat0 + ((i % 7) - 3) * 0.0008,
+         "longitude": lon0 + ((i // 7) - 3) * 0.0008, "estimated_units": 100 + i * 5}
+        for i in range(1, 39)
     ]

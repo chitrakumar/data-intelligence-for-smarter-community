@@ -23,6 +23,7 @@ DA_CONFIG = f"{catalog}.{CONFIG_SCHEMA}"     # holds the Genie space id for Lab 
 
 display_config_values([
     ('Catalog', catalog, True),
+    ('Campus', f'{CAMPUS_NAME} (<code>{CAMPUS}</code>)', CAMPUS),
     ('Bronze schema', DA_BRONZE, True),
     ('Silver schema', DA_SILVER, True),
     ('Gold schema', DA_GOLD, True),

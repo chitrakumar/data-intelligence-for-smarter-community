@@ -6,7 +6,8 @@
 
 # MAGIC %md
 # MAGIC # Classroom-Setup-Common
-# MAGIC Shared helpers for the **TAMU Smart Campus** workshop. Every per-lab
+# MAGIC Shared helpers for the **Smart Campus** workshop (the active campus is set by
+# MAGIC `CAMPUS` in the config cell below). Every per-lab
 # MAGIC setup notebook (`Classroom-Setup-01` … `Classroom-Setup-06`) runs this file first
 # MAGIC via `%run ./Classroom-Setup-Common`.
 # MAGIC
@@ -23,6 +24,14 @@
 
 # DBTITLE 1,Workshop configuration
 # Course-wide config. Change here, not in the lab notebooks.
+
+# ── Which campus? ────────────────────────────────────────────────────────────
+# Folder name under Includes/campuses/. Each campus folder holds a campus.json
+# (names, branding, map bbox/center, data window, cell sites) plus its geojson.
+# To add a school: copy campuses/tamu/ to campuses/<slug>/, swap in the new
+# campus's geojson + values, then set CAMPUS = "<slug>". See campuses/README.md.
+CAMPUS = "tamu"
+
 CATALOG_PREFIX = "labuser"                 # per-user catalog is <prefix>_<username>
 
 # ── No permission to CREATE a catalog? ────────────────────────────────────────
@@ -509,10 +518,11 @@ def copy_folder(src: str, dst: str, clean: bool = False) -> str:
 
 # COMMAND ----------
 
-# DBTITLE 1,Workshop data provisioning (telemetry generation + geodata volume)
-# The real Texas A&M campus geodata (OpenStreetMap) files uploaded to a Volume for students to ingest in Lab 02.
+# DBTITLE 1,Workshop data provisioning (campus profile + telemetry generation + geodata volume)
+# The real campus geodata (OpenStreetMap) files uploaded to a Volume for students to ingest in Lab 02.
 GEODATA_VOLUME = "raw_geodata"
-GEODATA_FILES = ["tamu_buildings.geojson", "tamu_neighbourhoods.geojson"]
+GEODATA_FILES = ["buildings.geojson", "neighbourhoods.geojson"]
+CAMPUS_TABLE_PROPERTY = "workshop.campus"   # tags Bronze telemetry with the campus it was generated for
 
 
 def _course_includes_dir() -> str:
@@ -522,15 +532,41 @@ def _course_includes_dir() -> str:
     (the workshop root), so Includes sits alongside it.
     """
     lab_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
-    return f"/Workspace{os.path.dirname(lab_path)}/Includes"
+    parent = os.path.dirname(lab_path)
+    if os.path.basename(parent) == "Includes":   # run directly from inside Includes/
+        return f"/Workspace{parent}"
+    return f"/Workspace{parent}/Includes"
+
+
+def load_active_campus() -> dict:
+    """Load + validate Includes/campuses/<CAMPUS>/campus.json."""
+    import sys
+    includes = _course_includes_dir()
+    if includes not in sys.path:
+        sys.path.insert(0, includes)
+    from campus_config import load_campus
+    return load_campus(CAMPUS)
+
+
+def _bronze_campus(catalog: str):
+    """Campus slug the existing Bronze telemetry was generated for.
+
+    None = no Bronze telemetry yet; "" = tables exist but predate campus tagging.
+    """
+    fqn = f"{catalog}.{BRONZE_SCHEMA}.sc_access_events"
+    if not spark.catalog.tableExists(fqn):
+        return None
+    props = {r["key"]: r["value"] for r in spark.sql(f"SHOW TBLPROPERTIES {fqn}").collect()}
+    return props.get(CAMPUS_TABLE_PROPERTY, "")
 
 
 def ensure_bronze_data(catalog: str):
     """Idempotently provision the workshop's raw inputs:
 
     1. Generate the 9 synthetic *telemetry* Bronze tables into `<catalog>.bronze`
-       (skipped if already present — so only the first lab pays the cost).
-    2. Upload the real Texas A&M campus geodata (OpenStreetMap) (OpenStreetMap, ODbL) to the Volume
+       for the active CAMPUS (skipped if already generated for that campus — so only
+       the first lab pays the cost; changing CAMPUS regenerates them).
+    2. Upload the active campus's real geodata (OpenStreetMap, ODbL) to the Volume
        `<catalog>.bronze.raw_geodata` so students ingest it in Lab 02.
 
     Dimension tables (dim_buildings, dim_zones) are NOT created here — those come
@@ -539,26 +575,39 @@ def ensure_bronze_data(catalog: str):
     import sys
     includes = _course_includes_dir()
 
-    # 1) Synthetic telemetry Bronze tables (one-time).
-    if spark.catalog.tableExists(f"{catalog}.{BRONZE_SCHEMA}.sc_access_events"):
-        print("✅ Bronze telemetry already present, skipping generation.")
+    # 1) Synthetic telemetry Bronze tables (one-time per campus).
+    existing = _bronze_campus(catalog)
+    if existing == CAMPUS:
+        print(f"✅ Bronze telemetry for '{CAMPUS}' already present, skipping generation.")
     else:
+        if existing is not None:
+            print(f"ℹ️ Existing Bronze telemetry was generated for "
+                  f"'{existing or 'an untagged campus'}'; regenerating for '{CAMPUS}'.")
         if includes not in sys.path:
             sys.path.insert(0, includes)
         from smart_campus_generators import generate_telemetry
-        print("Generating synthetic telemetry Bronze tables (one-time, ~2 min)...")
+        print(f"Generating synthetic telemetry Bronze tables for {CAMPUS_NAME} (one-time, ~2 min)...")
         generate_telemetry(spark, catalog, BRONZE_SCHEMA, scale=WORKSHOP_SCALE, seed=SEED,
-                           geojson_dir=f"{includes}/geojson")
+                           campus=CAMPUS_CONFIG)
+        spark.sql(f"ALTER TABLE {catalog}.{BRONZE_SCHEMA}.sc_access_events "
+                  f"SET TBLPROPERTIES ('{CAMPUS_TABLE_PROPERTY}' = '{CAMPUS}')")
 
-    # 2) Real Texas A&M campus geodata → Volume (one-time).
+    # 2) Real campus geodata → Volume (refreshed every run: small files, and it must follow CAMPUS).
     spark.sql(f"CREATE VOLUME IF NOT EXISTS `{catalog}`.`{BRONZE_SCHEMA}`.`{GEODATA_VOLUME}`")
     vol_dir = f"/Volumes/{catalog}/{BRONZE_SCHEMA}/{GEODATA_VOLUME}"
     for fn in GEODATA_FILES:
-        dst = f"{vol_dir}/{fn}"
-        if not os.path.exists(dst):
-            shutil.copy(f"{includes}/geojson/{fn}", dst)
-    print(f"✅ Texas A&M campus geodata uploaded to Volume: {vol_dir}")
+        shutil.copy(f"{CAMPUS_CONFIG['_geojson_dir']}/{fn}", f"{vol_dir}/{fn}")
+    print(f"✅ {CAMPUS_NAME} campus geodata uploaded to Volume: {vol_dir}")
     return vol_dir
+
+
+# Active campus profile, available to every lab notebook.
+CAMPUS_CONFIG = load_active_campus()
+CAMPUS_NAME = CAMPUS_CONFIG["name"]
+CAMPUS_SHORT_NAME = CAMPUS_CONFIG["short_name"]
+_bb = CAMPUS_CONFIG["map"]["bbox"]
+CAMPUS_LAT_MIN, CAMPUS_LAT_MAX = _bb["lat_min"], _bb["lat_max"]
+CAMPUS_LON_MIN, CAMPUS_LON_MAX = _bb["lon_min"], _bb["lon_max"]
 
 # COMMAND ----------
 

@@ -139,7 +139,7 @@ display(dbutils.fs.ls(GEODATA_DIR))
 # DBTITLE 1,Peek inside the buildings GeoJSON
 import json
 
-with open(f"{GEODATA_DIR}/tamu_buildings.geojson") as f:
+with open(f"{GEODATA_DIR}/buildings.geojson") as f:
     gj = json.load(f)
 
 feats = gj.get("features", [])

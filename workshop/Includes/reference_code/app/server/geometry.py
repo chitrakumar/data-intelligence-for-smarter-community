@@ -1,16 +1,17 @@
 # Modified November 2026 by Hayley Horn for the TAMU Datathon: UBC campus data and references replaced with Texas A&M campus data from OpenStreetMap (ODbL).
-"""TAMU real-world building and zone footprints from OpenStreetMap (ODbL).
+# Modified November 2026: campus geojson + zone footprints now come from the active campus profile.
+"""Real-world building and zone footprints for the active campus, from OpenStreetMap (ODbL).
 
-Loads GeoJSON files once on startup and merges in the dim_buildings/dim_zones
-rows from Delta tables so the map renders real TAMU polygons with up-to-date
-table properties.
+Loads the campus GeoJSON files (see ``campus_profile.py``) once and merges in the
+dim_buildings/dim_zones rows from Delta tables so the map renders real campus
+polygons with up-to-date table properties.
 
 Source: OpenStreetMap contributors, Open Database License (ODbL).
 https://www.openstreetmap.org/copyright
 
-This module resolves 38 residences via BCOM_UID (bcom_uid) in
-``tamu_complexes.geojson`` with a NAME-substring fallback for the two legacy
-slots whose geometry still lives in ``tamu_buildings.geojson`` (legacy UBC
+This module resolves residences via BCOM_UID (bcom_uid) in
+``complexes.geojson`` with a NAME-substring fallback for the two legacy
+slots whose geometry still lives in ``buildings.geojson`` (legacy UBC
 Commons and Exchange Residence).  The legacy slots are only consulted if the
 Delta row's ``bcom_uid`` is NULL.
 """
@@ -20,11 +21,9 @@ import math
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from . import campus_profile
 from .config import table
 from .sql import run_query
-
-
-GEOJSON_DIR = Path(__file__).parent / "geojson"
 
 # Cached GeoJSON at module load time.
 _complexes: Optional[Dict[str, Any]] = None
@@ -36,7 +35,7 @@ _complexes_by_uid: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 def _load_geojson(name: str) -> Dict[str, Any]:
-    path = GEOJSON_DIR / name
+    path = campus_profile.geojson_dir() / name
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -44,11 +43,11 @@ def _load_geojson(name: str) -> Dict[str, Any]:
 def _ensure_loaded() -> None:
     global _complexes, _buildings, _neighbourhoods, _complexes_by_uid
     if _complexes is None:
-        _complexes = _load_geojson("tamu_complexes.geojson")
+        _complexes = _load_geojson("complexes.geojson")
     if _buildings is None:
-        _buildings = _load_geojson("tamu_buildings.geojson")
+        _buildings = _load_geojson("buildings.geojson")
     if _neighbourhoods is None:
-        _neighbourhoods = _load_geojson("tamu_neighbourhoods.geojson")
+        _neighbourhoods = _load_geojson("neighbourhoods.geojson")
     if _complexes_by_uid is None:
         idx: Dict[str, Dict[str, Any]] = {}
         for feat in _complexes.get("features", []):  # type: ignore[union-attr]
@@ -102,25 +101,11 @@ def _find_features_contains(
 LEGACY_BUILDING_MAP: Dict[str, Dict[str, Any]] = {}
 
 
-# Mapping: our zone_name -> (source file, NAME, contains?). None means fall back to circle.
+# Mapping: our zone_name -> {source file, NAME, contains?}. None means fall back to circle.
+# Built from campus.json ``landmark_zones[].footprint``.
 ZONE_MAP: Dict[str, Optional[Dict[str, Any]]] = {
-    "Memorial Student Center": {"source": "buildings", "name": "Memorial Student Center"},
-    "Sterling C. Evans Library": {"source": "buildings", "name": "Sterling C. Evans Library"},
-    "Academic Building": {"source": "buildings", "name": "Academic Building"},
-    "Student Recreation Center": {"source": "buildings", "name": "Student Recreation Center"},
-    "Zachry Engineering Education Complex": {"source": "buildings", "name": "Zachry Engineering Education Complex"},
-    "Reed Arena": {"source": "buildings", "name": "Reed Arena"},
-    "Kyle Field": {"source": "buildings", "name": "Kyle Field"},
-    "Veterinary Teaching Hospital": {"source": "buildings", "name": "Veterinary Teaching Hospital"},
-    "The Commons": {"source": "buildings", "name": "Commons"},
-    # Fall back to small circles
-    "College Main Parking Garage Stop": None,
-    "Military Walk": None,
-    "Century Tree": None,
-    "Simpson Drill Field": None,
-    "Aggie Bonfire Memorial": None,
-    "Aggie Park": None,
-    "White Creek Transit": None,
+    z["name"]: z.get("footprint")
+    for z in campus_profile.campus().get("landmark_zones", [])
 }
 
 
@@ -128,7 +113,7 @@ def circle_polygon(
     lat: float, lon: float, radius_m: float = 60, n: int = 24
 ) -> Dict[str, Any]:
     """Return a GeoJSON Polygon approximating a circle centered at (lat, lon)."""
-    # Convert meters to degrees. At Texas A&M latitude (~30.61°N):
+    # Convert meters to degrees at the given latitude:
     # 1° lat ≈ 111,320 m   1° lon ≈ cos(lat) * 111,320 m
     deg_lat = radius_m / 111_320.0
     cos_lat = math.cos(math.radians(lat))
@@ -182,7 +167,7 @@ def _resolve_legacy_building_geom(mapping: Dict[str, Any]) -> Optional[Dict[str,
 
 
 def _resolve_building_geom_by_uid(bcom_uid: Optional[str]) -> Optional[Dict[str, Any]]:
-    """Lookup a complex polygon from tamu_complexes.geojson by BCOM_UID."""
+    """Lookup a complex polygon from complexes.geojson by BCOM_UID."""
     if not bcom_uid:
         return None
     _ensure_loaded()
@@ -195,7 +180,7 @@ def _resolve_building_geom_by_uid(bcom_uid: Optional[str]) -> Optional[Dict[str,
 def _resolve_building_geom_by_name(
     building_name: Optional[str],
 ) -> Optional[Dict[str, Any]]:
-    """Fallback: look up a polygon by NAME in tamu_complexes.geojson."""
+    """Fallback: look up a polygon by NAME in complexes.geojson."""
     if not building_name:
         return None
     _ensure_loaded()
@@ -235,12 +220,12 @@ def _resolve_zone_geom(
 
 
 def get_building_polygons() -> Dict[str, Any]:
-    """Return a GeoJSON FeatureCollection for dim_buildings using real TAMU geometry.
+    """Return a GeoJSON FeatureCollection for dim_buildings using real campus geometry.
 
     Resolution order for each row:
-      1) Match by ``bcom_uid`` against tamu_complexes.geojson (preferred).
+      1) Match by ``bcom_uid`` against complexes.geojson (preferred).
       2) Match by building_name substring (fallback).
-      3) Legacy hard-coded BLDG_* mapping (empty for the TAMU edition).
+      3) Legacy hard-coded BLDG_* mapping (empty unless a campus needs it).
       4) Small circle at stored lat/lon (last resort).
     """
     rows = run_query(
@@ -295,7 +280,7 @@ def get_building_polygons() -> Dict[str, Any]:
     }
 
 
-# -------------------- Campus Map (all TAMU campus buildings) --------------------
+# -------------------- Campus Map (all campus buildings) --------------------
 
 # Map OpenStreetMap BLDG_USAGE values to user-facing categories.
 USAGE_TO_CATEGORY: Dict[str, str] = {
@@ -326,8 +311,8 @@ def _categorize(usage: Optional[str]) -> str:
 
 
 def get_campus_polygons() -> Dict[str, Any]:
-    """Return a GeoJSON FeatureCollection of ALL Texas A&M campus buildings
-    (321 features), annotated with a user-facing ``category`` derived from
+    """Return a GeoJSON FeatureCollection of ALL campus buildings
+    (e.g. 321 for TAMU), annotated with a user-facing ``category`` derived from
     the OpenStreetMap ``BLDG_USAGE`` attribute.  Includes a ``meta`` block with
     per-category counts and up-to-5 example names.
     """
@@ -404,7 +389,7 @@ def get_campus_polygons() -> Dict[str, Any]:
 
 
 def get_zone_polygons() -> Dict[str, Any]:
-    """Return a GeoJSON FeatureCollection for dim_zones using real TAMU geometry."""
+    """Return a GeoJSON FeatureCollection for dim_zones using real campus geometry."""
     rows = run_query(
         f"""
         SELECT zone_id, zone_name, zone_type, latitude, longitude
@@ -417,8 +402,9 @@ def get_zone_polygons() -> Dict[str, Any]:
     for row in rows:
         zname = row.get("zone_name") or ""
         mapping = ZONE_MAP.get(zname, None)
-        lat = float(row["latitude"]) if row.get("latitude") is not None else 30.6125
-        lon = float(row["longitude"]) if row.get("longitude") is not None else -96.3418
+        c_lat, c_lon = campus_profile.center()
+        lat = float(row["latitude"]) if row.get("latitude") is not None else c_lat
+        lon = float(row["longitude"]) if row.get("longitude") is not None else c_lon
         geom, matched = _resolve_zone_geom(mapping, lat, lon)
         if not matched:
             fallback_zones.append(zname)

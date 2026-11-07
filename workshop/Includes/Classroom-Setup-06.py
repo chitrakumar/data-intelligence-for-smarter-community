@@ -30,10 +30,15 @@ _lab_dir = os.path.dirname(
 _ref_src = f"/Workspace{_lab_dir}/Includes/reference_code/app"
 reference_app_path = copy_folder(src=_ref_src, dst=home("smart-campus-app"), clean=True)
 
+# Bundle the active campus profile (campus.json + geojson) into the app at
+# server/campus/, which is where server/campus.py loads it from at runtime.
+copy_folder(src=CAMPUS_CONFIG["_dir"], dst=f"{reference_app_path}/server/campus", clean=True)
+
 # COMMAND ----------
 
 display_config_values([
     ('Catalog', catalog, True),
+    ('Campus', f'{CAMPUS_NAME} (<code>{CAMPUS}</code>)', CAMPUS),
     ('Silver schema (app reads this)', DA_SILVER, True),
     ('App name', f'<a href="/apps-v2/app/{my_app_name}/overview" target="_blank">{my_app_name}</a>', my_app_name),
     ('App service principal', my_app_sp, True),

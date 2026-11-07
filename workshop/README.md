@@ -40,9 +40,21 @@ workshop/
     ├── Classroom-Setup-Common.py     # helper library (catalog, schemas, compute check, app helpers)
     ├── Classroom-Setup-01..06.py     # per-lab setup (chains to Common)
     ├── smart_campus_generators.py    # telemetry generator, run by Classroom-Setup (generate_telemetry)
-    ├── geojson/                      # TAMU building/zone polygons from OpenStreetMap (ODbL)
+    ├── campus_config.py              # loads + validates the active campus profile
+    ├── campuses/
+    │   ├── README.md                 # how to add a new school / university
+    │   └── tamu/                     # one folder per campus
+    │       ├── campus.json           # names, branding, bbox/center, data window, zones, cell sites
+    │       └── geojson/              # building/zone polygons from OpenStreetMap (ODbL)
     └── reference_code/app/           # the trimmed single-tab app, pre-built (Lab 06 deploys this)
 ```
+
+## Switching campus
+
+Set `CAMPUS = "<slug>"` in `Includes/Classroom-Setup-Common.py` (default `"tamu"`). Everything
+that's data or map driven (generated telemetry, the Lab 02 bounding box, the geodata Volume,
+the app's geojson and labels) follows it. See [`Includes/campuses/README.md`](Includes/campuses/README.md)
+to add a new school.
 
 ## Requirements
 

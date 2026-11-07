@@ -43,7 +43,7 @@
 # MAGIC The one piece of **real** data is the OpenStreetMap in your Volume. We read the GeoJSON,
 # MAGIC pull out the fields we want, compute a centroid for each polygon, and write two
 # MAGIC **Bronze** dimension tables: `dim_buildings` and `dim_zones`. Crucially,
-# MAGIC `tamu_buildings.geojson` carries `BLDG_UID` (`TBL10xxx`), the **same key** the telemetry
+# MAGIC `buildings.geojson` carries `BLDG_UID` (`TBL10xxx`), the **same key** the telemetry
 # MAGIC uses, so these dimensions join cleanly to everything else.
 
 # COMMAND ----------
@@ -73,10 +73,10 @@ CATEGORY_MAP = {
 
 # COMMAND ----------
 
-# DBTITLE 1,Ingest tamu_buildings.geojson -> dim_buildings
+# DBTITLE 1,Ingest buildings.geojson -> dim_buildings
 import json
 
-with open(f"{GEODATA_DIR}/tamu_buildings.geojson") as f:
+with open(f"{GEODATA_DIR}/buildings.geojson") as f:
     gj = json.load(f)
 
 rows = []
@@ -100,8 +100,8 @@ display(dim_buildings.limit(5))
 
 # COMMAND ----------
 
-# DBTITLE 1,Ingest tamu_neighbourhoods.geojson -> dim_zones
-with open(f"{GEODATA_DIR}/tamu_neighbourhoods.geojson") as f:
+# DBTITLE 1,Ingest neighbourhoods.geojson -> dim_zones
+with open(f"{GEODATA_DIR}/neighbourhoods.geojson") as f:
     nj = json.load(f)
 
 zrows = []
@@ -125,20 +125,23 @@ display(dim_zones)
 # MAGIC | Move | Why it matters |
 # MAGIC |---|---|
 # MAGIC | **De-duplicate** on the natural key | Streams re-deliver events; counts must not double |
-# MAGIC | **Validate coordinates** (TAMU bbox) | A stray lat/lon puts a building in the wrong county on the map |
+# MAGIC | **Validate coordinates** (campus bbox) | A stray lat/lon puts a building in the wrong county on the map |
 # MAGIC | **Handle nulls** in join keys | A null `bldg_uid` can't join to a building |
 # MAGIC | **Conform types & keys** | Every dataset must join on the same `bldg_uid` |
 # MAGIC
-# MAGIC Texas A&M bounding box: latitude **30.59–30.632 N**, longitude **−96.370 to −96.322 W**
-# MAGIC (covers Main Campus, West Campus, Research Park and Northgate).
+# MAGIC The campus bounding box comes from the active campus profile
+# MAGIC (`Includes/campuses/<campus>/campus.json`); the next cell prints it.
 
 # COMMAND ----------
 
 # DBTITLE 1,Reusable bounding-box check
 from pyspark.sql import functions as F
 
-CAMPUS_LAT_MIN, CAMPUS_LAT_MAX = 30.590, 30.632
-CAMPUS_LON_MIN, CAMPUS_LON_MAX = -96.370, -96.322
+# CAMPUS_LAT_MIN / _MAX and CAMPUS_LON_MIN / _MAX are set by the setup notebook
+# from campus.json (map.bbox).
+print(f"{CAMPUS_NAME} bounding box: "
+      f"lat {CAMPUS_LAT_MIN} to {CAMPUS_LAT_MAX}, lon {CAMPUS_LON_MIN} to {CAMPUS_LON_MAX}"
+      + (f"  ({CAMPUS_CONFIG['map']['bbox_description']})" if CAMPUS_CONFIG['map'].get('bbox_description') else ""))
 
 def in_campus_bbox(lat_col="latitude", lon_col="longitude"):
     return (

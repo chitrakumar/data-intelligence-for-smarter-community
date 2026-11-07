@@ -1,4 +1,5 @@
 # Modified November 2026 by Hayley Horn for the TAMU Datathon: UBC campus data and references replaced with Texas A&M campus data from OpenStreetMap (ODbL).
+# Modified November 2026: added /api/campus (active campus profile for the frontend).
 """Smart Community Testbed - FastAPI backend + static React frontend."""
 from __future__ import annotations
 import os
@@ -30,6 +31,7 @@ from server.genie import (
     GenieSpaceNotConfigured,
 )
 from server.geometry import get_building_polygons, get_zone_polygons, get_campus_polygons
+from server import campus_profile
 
 app = FastAPI(title="Smart Community Testbed")
 
@@ -74,7 +76,13 @@ def get_data(dataset_key: str, range: str = Query("all", pattern="^(24h|7d|30d|a
     return _json(result)
 
 
-# -------- Real TAMU GeoJSON footprints --------
+# -------- Active campus profile (name, branding, map center/bbox) --------
+@app.get("/api/campus")
+def campus_info():
+    return _json(campus_profile.public_config())
+
+
+# -------- Real campus GeoJSON footprints --------
 @app.get("/api/geojson/buildings")
 def geojson_buildings():
     try:

@@ -1,0 +1,59 @@
+{
+  "slug": "tamu",
+  "name": "Texas A&M University",
+  "short_name": "TAMU",
+  "city": "College Station, TX",
+  "event_name": "TAMU Datathon",
+
+  "branding": {
+    "primary_color": "#500000"
+  },
+
+  "map": {
+    "center": { "lat": 30.6125, "lon": -96.3418 },
+    "bbox": { "lat_min": 30.590, "lat_max": 30.632, "lon_min": -96.370, "lon_max": -96.322 },
+    "bbox_description": "Main Campus, West Campus, Research Park and Northgate",
+    "meters_per_degree_lon": 95800.0
+  },
+
+  "data_window": {
+    "end": "2026-11-06T00:00:00",
+    "days": 30,
+    "study_crunch_start": "2026-10-26T00:00:00",
+    "study_crunch_end": "2026-11-01T23:59:59"
+  },
+
+  "landmark_zones": [
+    { "zone_id": "ZONE_01", "name": "Memorial Student Center",              "type": "transit",      "lat": 30.6125, "lon": -96.3418, "footprint": { "source": "buildings", "name": "Memorial Student Center" } },
+    { "zone_id": "ZONE_02", "name": "Sterling C. Evans Library",            "type": "academic",     "lat": 30.6169, "lon": -96.3391, "footprint": { "source": "buildings", "name": "Sterling C. Evans Library" } },
+    { "zone_id": "ZONE_03", "name": "Academic Building",                    "type": "academic",     "lat": 30.6158, "lon": -96.3409, "footprint": { "source": "buildings", "name": "Academic Building" } },
+    { "zone_id": "ZONE_04", "name": "Student Recreation Center",            "type": "recreational", "lat": 30.6071, "lon": -96.3429, "footprint": { "source": "buildings", "name": "Student Recreation Center" } },
+    { "zone_id": "ZONE_05", "name": "Zachry Engineering Education Complex", "type": "academic",     "lat": 30.6214, "lon": -96.3404, "footprint": { "source": "buildings", "name": "Zachry Engineering Education Complex" } },
+    { "zone_id": "ZONE_06", "name": "Reed Arena",                           "type": "recreational", "lat": 30.6058, "lon": -96.3461, "footprint": { "source": "buildings", "name": "Reed Arena" } },
+    { "zone_id": "ZONE_07", "name": "Kyle Field",                           "type": "recreational", "lat": 30.6099, "lon": -96.3405, "footprint": { "source": "buildings", "name": "Kyle Field" } },
+    { "zone_id": "ZONE_08", "name": "College Main Parking Garage Stop",     "type": "transit",      "lat": 30.6195, "lon": -96.3468, "footprint": null },
+    { "zone_id": "ZONE_09", "name": "The Commons",                          "type": "residential",  "lat": 30.6152, "lon": -96.3359, "footprint": { "source": "buildings", "name": "Commons" } },
+    { "zone_id": "ZONE_10", "name": "Veterinary Teaching Hospital",         "type": "academic",     "lat": 30.6129, "lon": -96.3531, "footprint": { "source": "buildings", "name": "Veterinary Teaching Hospital" } },
+    { "zone_id": "ZONE_11", "name": "Military Walk",                        "type": "outdoor",      "lat": 30.6151, "lon": -96.3417, "footprint": null },
+    { "zone_id": "ZONE_12", "name": "Century Tree",                         "type": "outdoor",      "lat": 30.6159, "lon": -96.3414, "footprint": null },
+    { "zone_id": "ZONE_13", "name": "Simpson Drill Field",                  "type": "outdoor",      "lat": 30.6136, "lon": -96.3428, "footprint": null },
+    { "zone_id": "ZONE_14", "name": "Aggie Bonfire Memorial",               "type": "outdoor",      "lat": 30.6227, "lon": -96.3352, "footprint": null },
+    { "zone_id": "ZONE_15", "name": "Aggie Park",                           "type": "outdoor",      "lat": 30.6098, "lon": -96.3370, "footprint": null },
+    { "zone_id": "ZONE_16", "name": "White Creek Transit",                  "type": "transit",      "lat": 30.6067, "lon": -96.3566, "footprint": null }
+  ],
+
+  "cell_sites": [
+    { "site_id": "SITE_01", "name": "MSC / Rudder Plaza",              "lat": 30.6132, "lon": -96.3407 },
+    { "site_id": "SITE_02", "name": "Military Walk / Academic Plaza",  "lat": 30.6155, "lon": -96.3410 },
+    { "site_id": "SITE_03", "name": "Kyle Field",                      "lat": 30.6099, "lon": -96.3405 },
+    { "site_id": "SITE_04", "name": "Reed Arena / West Campus Garage", "lat": 30.6080, "lon": -96.3455 },
+    { "site_id": "SITE_05", "name": "Southside / The Commons",         "lat": 30.6150, "lon": -96.3355 },
+    { "site_id": "SITE_06", "name": "Veterinary Campus",               "lat": 30.6125, "lon": -96.3535 },
+    { "site_id": "SITE_07", "name": "Northgate",                       "lat": 30.6190, "lon": -96.3480 },
+    { "site_id": "SITE_08", "name": "Zachry / Northside",              "lat": 30.6210, "lon": -96.3410 },
+    { "site_id": "SITE_09", "name": "White Creek",                     "lat": 30.6075, "lon": -96.3560 },
+    { "site_id": "SITE_10", "name": "Research Park",                   "lat": 30.6005, "lon": -96.3590 }
+  ],
+
+  "attribution": "Map data © OpenStreetMap contributors (ODbL). Neighbourhood zones are approximate areas drawn for this demo, not official Texas A&M boundaries."
+}
