@@ -1,0 +1,106 @@
+{
+  "app": {
+    "campus_polygons": "563b7023598f9db6",
+    "labels": {
+      "connectivity_presence": "Connectivity Presence (connectivity_presence)",
+      "dim_buildings": "TAMU Residence Halls (dim_buildings)",
+      "dim_zones": "Campus Zones (dim_zones)",
+      "gateway_telemetry": "Broadband Gateways (gateway_telemetry)",
+      "mobility_presence": "Telco Mobility (mobility_presence)",
+      "sc_access_events": "Building Access (sc_access_events)",
+      "sc_device_health": "Device Telemetry (sc_device_health)",
+      "udl_campus_metrics": "TAMU University Data Lake (udl_campus_metrics)",
+      "udl_environmental": "Environmental Sensors (udl_environmental)",
+      "udl_ev_charging": "EV Charging (udl_ev_charging)",
+      "wireless_cells": "Telco Wireless Cells (wireless_cells)",
+      "wireless_connectivity": "Telco Wireless Coverage (wireless_connectivity)",
+      "wireless_network": "Telco Wireless Network (wireless_network)",
+      "wireless_node_health": "Telco Cell KPIs (wireless_node_health)"
+    },
+    "zone_map": {
+      "Academic Building": {
+        "name": "Academic Building",
+        "source": "buildings"
+      },
+      "Aggie Bonfire Memorial": null,
+      "Aggie Park": null,
+      "Century Tree": null,
+      "College Main Parking Garage Stop": null,
+      "Kyle Field": {
+        "name": "Kyle Field",
+        "source": "buildings"
+      },
+      "Memorial Student Center": {
+        "name": "Memorial Student Center",
+        "source": "buildings"
+      },
+      "Military Walk": null,
+      "Reed Arena": {
+        "name": "Reed Arena",
+        "source": "buildings"
+      },
+      "Simpson Drill Field": null,
+      "Sterling C. Evans Library": {
+        "name": "Sterling C. Evans Library",
+        "source": "buildings"
+      },
+      "Student Recreation Center": {
+        "name": "Student Recreation Center",
+        "source": "buildings"
+      },
+      "The Commons": {
+        "name": "Commons",
+        "source": "buildings"
+      },
+      "Veterinary Teaching Hospital": {
+        "name": "Veterinary Teaching Hospital",
+        "source": "buildings"
+      },
+      "White Creek Transit": null,
+      "Zachry Engineering Education Complex": {
+        "name": "Zachry Engineering Education Complex",
+        "source": "buildings"
+      }
+    }
+  },
+  "scale": 0.02,
+  "seed": 42,
+  "telemetry": {
+    "connectivity_presence": [
+      8000,
+      "b96a147e380d6b99"
+    ],
+    "mobility_presence": [
+      10000,
+      "f14329865eb17e1b"
+    ],
+    "sc_access_events": [
+      12000,
+      "9f648e81caf79e6f"
+    ],
+    "sc_device_health": [
+      5000,
+      "0eea430e78c69580"
+    ],
+    "sc_gateway_network": [
+      5400,
+      "bdc26d8b1887d535"
+    ],
+    "udl_campus_metrics": [
+      260,
+      "06dd41417e48b59b"
+    ],
+    "wireless_cells": [
+      210,
+      "dfd870706b6e0d8d"
+    ],
+    "wireless_connectivity": [
+      4000,
+      "b3e801bfbb047905"
+    ],
+    "wireless_node_health": [
+      75600,
+      "69ede2d5c2d09f44"
+    ]
+  }
+}
