@@ -81,7 +81,9 @@ Then commit and push your branch.
 1. **Workspace → Create → Git folder**, using your fork's URL and your campus branch.
 2. Open `workshop/00 - Course Overview` and connect to **Serverless**.
 3. Run labs 01 → 06 in order. Check:
-   - **Lab 01:** the setup table shows **Campus: <your campus>**.
+   - **Lab 01:** the setup output shows a **"Today's campus: <your campus>"** banner in your
+     color, and the config table shows **Campus: <your campus>**.
+   - **Lab 05:** the instructions cell prints Genie instructions naming your campus; paste those.
    - **Lab 02:** prints your campus bounding box.
    - **Lab 06:** prints *"Frontend re-branded for <campus>"*. The app map opens on your campus,
      in your color, and `<app-url>/api/campus` returns your profile.
@@ -97,8 +99,10 @@ tables, and Lab 06 redeploys the same app with the new campus.
 
 ## Still campus-specific (known gaps)
 
-- **Lab notebook text** (markdown, header color `#500000`, "TAMU Datathon" credits) still talks
-  about Texas A&M. Edit the notebook markdown for your event if that matters to you.
+- **Lab notebook text** is campus-neutral ("your campus"). The campus name shows up at runtime:
+  the setup banner in every lab, the Genie instructions printed in Lab 05, and the "you should
+  see" line in Lab 06. The "Modified … for the TAMU Datathon" lines are attribution notices; keep
+  them. `tests/test_notebook_text.py` fails if campus-specific text creeps back into a notebook.
 - **The app's frontend** source isn't in the repo. Lab 06 patches the compiled bundle (center,
   color, names), which covers what attendees see, but layout or text changes beyond that need
   the React source.

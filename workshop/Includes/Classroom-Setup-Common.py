@@ -28,8 +28,8 @@
 # ── Which campus? ────────────────────────────────────────────────────────────
 # Folder name under Includes/campuses/. Each campus folder holds a campus.json
 # (names, branding, map bbox/center, data window, cell sites) plus its geojson.
-# To add a school: copy campuses/tamu/ to campuses/<slug>/, swap in the new
-# campus's geojson + values, then set CAMPUS = "<slug>". See campuses/README.md.
+# To add a school: run tools/new_campus.py to generate campuses/<slug>/, review it,
+# then set CAMPUS = "<slug>". See NEW_CAMPUS.md at the repo root.
 CAMPUS = "tamu"
 
 CATALOG_PREFIX = "labuser"                 # per-user catalog is <prefix>_<username>
@@ -376,7 +376,28 @@ def compute_validation(recommended_serverless_version: int = None, recommend_dbr
 
 # COMMAND ----------
 
+def campus_banner():
+    """Campus-branded banner (name, city, event, brand color) from the active campus profile."""
+    import html as _html
+    c = CAMPUS_CONFIG
+    color = (c.get("branding") or {}).get("primary_color", "#1B3139")
+    subtitle = " · ".join(x for x in (c.get("city"), c.get("event_name")) if x)
+    displayHTML(f"""
+<div style="display:flex; align-items:center; gap:14px; padding:14px 20px; margin:6px 0 10px 0;
+            background:linear-gradient(135deg,#1B3139 0%,#1B5162 100%); border-radius:12px; color:#fff;
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:38px;
+               border-radius:10px; background:{_html.escape(color)}; font-weight:800; font-size:15px;
+               border:1px solid rgba(255,255,255,0.35);">{_html.escape(c.get("short_name", ""))}</span>
+  <div>
+    <div style="font-size:17px; font-weight:700;">Today's campus: {_html.escape(c.get("name", ""))}</div>
+    <div style="font-size:13px; opacity:0.85;">{_html.escape(subtitle)}</div>
+  </div>
+</div>""")
+
+
 def setup_complete_msg():
+    campus_banner()
     print('\n------------------------------------------------------------------------------')
     print('✅ SETUP COMPLETE!')
     print('------------------------------------------------------------------------------')

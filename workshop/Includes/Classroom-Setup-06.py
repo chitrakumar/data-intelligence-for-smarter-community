@@ -34,7 +34,7 @@ reference_app_path = copy_folder(src=_ref_src, dst=home("smart-campus-app"), cle
 # server/campus/, which is where server/campus_profile.py loads it from at runtime.
 copy_folder(src=CAMPUS_CONFIG["_dir"], dst=f"{reference_app_path}/server/campus", clean=True)
 
-# The pre-built frontend bundle was compiled for TAMU; swap its map center, brand
+# The pre-built frontend bundle was compiled for one campus; swap its map center, brand
 # color and campus names for the active campus (edits only this copy, not the repo).
 from frontend_branding import apply_branding
 _branded = apply_branding(f"{reference_app_path}/frontend/dist", CAMPUS_CONFIG)

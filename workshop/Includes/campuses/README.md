@@ -61,4 +61,4 @@ cell site you care about must be inside the bbox too (Lab 02 drops anything outs
 - **App frontend** (`reference_code/app/frontend/dist/`): only the compiled bundle is in the repo.
   Lab 06 patches the student's copy (`frontend_branding.py`: map center, brand color, campus
   names, building count). Once the React source is available, it should read `/api/campus` instead.
-- **Notebook prose** (lab markdown, header color, the course README): still TAMU-specific text.
+- **Repo READMEs** (root `README.md` intro and "About this edition") still describe the Texas A&M edition. The lab notebooks themselves are campus-neutral and render the campus name at runtime.

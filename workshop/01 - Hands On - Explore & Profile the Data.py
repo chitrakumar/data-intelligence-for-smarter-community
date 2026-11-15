@@ -2,7 +2,7 @@
 # MAGIC %md-sandbox
 # MAGIC <div style="display:flex; align-items:center; gap:16px; padding:18px 22px; background:linear-gradient(135deg,#1B3139 0%,#1B5162 100%); border-radius:12px; color:#fff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 # MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:10px; background:#FF3621; font-weight:800; font-size:18px;">DB</span>
-# MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:40px; border-radius:10px; background:#500000; font-weight:800; font-size:15px;">TAMU</span>
+# MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:40px; border-radius:10px; background:#00A972; font-weight:800; font-size:15px;">Smart Campus</span>
 # MAGIC   <div style="font-size:15px; font-weight:600; opacity:0.9;">Smart Community Testbed on Databricks · Lab 01</div>
 # MAGIC </div>
 
@@ -12,9 +12,9 @@
 # MAGIC # Lab 01: Explore &amp; Profile the Data
 # MAGIC
 # MAGIC Before you transform anything, get to know your data. When you ran setup, your workspace
-# MAGIC was seeded with a realistic **smart-community dataset** for the Texas A&M campus in College Station:
+# MAGIC was seeded with a realistic **smart-community dataset** for your campus (shown in the setup output):
 # MAGIC nine synthetic **telemetry** tables already landed in your **Bronze** schema, and the real
-# MAGIC **Texas A&M campus geodata** (OpenStreetMap, ODbL) was uploaded to a **Volume** for you to
+# MAGIC **campus geodata** (OpenStreetMap, ODbL) was uploaded to a **Volume** for you to
 # MAGIC ingest in Lab 02.
 # MAGIC
 # MAGIC In this lab you'll **query**, **profile**, and **check** that data in Unity Catalog. These are the
@@ -124,7 +124,7 @@ null_counts.display()
 
 # MAGIC %md
 # MAGIC ## E. Check the geodata Volume
-# MAGIC The one piece of **real** data is the Texas A&M campus geodata. Setup uploaded it to a **Volume**
+# MAGIC The one piece of **real** data is the campus geodata. Setup uploaded it to a **Volume**
 # MAGIC (governed file storage in Unity Catalog). Let's confirm it's there and peek inside. This
 # MAGIC is the file you'll ingest in Lab 02.
 

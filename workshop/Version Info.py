@@ -4,7 +4,8 @@
 # MAGIC
 # MAGIC | | |
 # MAGIC |---|---|
-# MAGIC | **Course** | Smart Community Testbed on Databricks (TAMU Smart Campus Workshop) |
+# MAGIC | **Course** | Smart Community Testbed on Databricks (Smart Campus Workshop) |
+# MAGIC | **Campus** | Set by `CAMPUS` in `Includes/Classroom-Setup-Common` (profiles in `Includes/campuses/`) |
 # MAGIC | **Version** | 1.0.0 |
 # MAGIC | **Tested on** | Serverless |
 # MAGIC | **Data attribution** | Building footprints from **OpenStreetMap** contributors, ODbL. All telemetry is synthetic demo data. |

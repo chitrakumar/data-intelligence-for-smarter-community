@@ -9,7 +9,7 @@ create_schemas(catalog, SCHEMAS)
 spark.sql(f"USE CATALOG `{catalog}`")
 
 # Provision the raw inputs (idempotent): generate the synthetic telemetry Bronze
-# tables and upload the real Texas A&M campus geodata (OpenStreetMap) to a Volume for Lab 02 to ingest.
+# tables and upload the active campus's real geodata (OpenStreetMap) to a Volume for Lab 02 to ingest.
 GEODATA_DIR = ensure_bronze_data(catalog)
 
 # Fully-qualified schema names the lab notebook can reference.

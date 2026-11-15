@@ -2,7 +2,7 @@
 # MAGIC %md-sandbox
 # MAGIC <div style="display:flex; align-items:center; gap:16px; padding:18px 22px; background:linear-gradient(135deg,#1B3139 0%,#1B5162 100%); border-radius:12px; color:#fff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 # MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:10px; background:#FF3621; font-weight:800; font-size:18px;">DB</span>
-# MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:40px; border-radius:10px; background:#500000; font-weight:800; font-size:15px;">TAMU</span>
+# MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:40px; border-radius:10px; background:#00A972; font-weight:800; font-size:15px;">Smart Campus</span>
 # MAGIC   <div style="font-size:15px; font-weight:600; opacity:0.9;">Smart Community Testbed on Databricks · Lab 05</div>
 # MAGIC </div>
 
@@ -65,18 +65,25 @@ print("  Gold:  ", DA_GOLD)
 # MAGIC %md-sandbox
 # MAGIC ## C. Add context (instructions + sample questions)
 # MAGIC
-# MAGIC In the agent's **Instructions** panel, paste something like this so Genie understands the domain:
-# MAGIC
-# MAGIC <div style="border:1px solid #DCE0E2; border-radius:8px; background:#F9F7F4; padding:14px 18px; margin:12px 0; color:#1B3139; font-size:0.92rem;">
-# MAGIC This data is a synthetic smart-community testbed for the Texas A&M campus in College Station.
-# MAGIC Buildings are keyed by <code>bldg_uid</code> (equals <code>dim_buildings.building_id</code>).
-# MAGIC "Security" questions use <code>sc_access_events</code> (forced_doors = event_type 'door_forced';
-# MAGIC tailgates = 'tailgate_detected'). "Transit / footfall" questions use <code>mobility_presence</code>
-# MAGIC (unique devices = distinct anon_device_id) and <code>cell_health</code>. Occupancy, energy, and
-# MAGIC safety incidents come from <code>udl_campus_metrics</code>. Prefer the Gold tables
-# MAGIC <code>building_activity</code> and <code>cell_health</code> for per-building / per-cell summaries.
-# MAGIC </div>
-# MAGIC
+# MAGIC In the agent's **Instructions** panel, paste the text printed by the next cell so Genie
+# MAGIC understands the domain. It names *your* campus, so Genie's answers do too.
+
+# COMMAND ----------
+
+# DBTITLE 1,Genie instructions for your campus (copy this into the agent)
+_landmarks = ", ".join(z["name"] for z in CAMPUS_CONFIG.get("landmark_zones", [])[:6])
+print(f"""This data is a synthetic smart-community testbed for the {CAMPUS_NAME} campus in {CAMPUS_CONFIG.get('city', '')}.
+Buildings are keyed by bldg_uid (equals dim_buildings.building_id).
+"Security" questions use sc_access_events (forced_doors = event_type 'door_forced';
+tailgates = 'tailgate_detected'). "Transit / footfall" questions use mobility_presence
+(unique devices = distinct anon_device_id) and cell_health. Occupancy, energy, and
+safety incidents come from udl_campus_metrics. Prefer the Gold tables
+building_activity and cell_health for per-building / per-cell summaries.
+Well-known places on this campus include: {_landmarks}.""")
+
+# COMMAND ----------
+
+# MAGIC %md-sandbox
 # MAGIC Then add these as **Sample Questions**:
 # MAGIC
 # MAGIC - *Which 5 buildings have the most forced-door events?*

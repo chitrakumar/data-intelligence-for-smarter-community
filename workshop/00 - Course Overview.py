@@ -2,10 +2,10 @@
 # MAGIC %md-sandbox
 # MAGIC <div style="display:flex; align-items:center; gap:16px; padding:20px 24px; background:linear-gradient(135deg,#1B3139 0%,#1B5162 100%); border-radius:12px; color:#fff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 # MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:10px; background:#FF3621; font-weight:800; font-size:20px;">DB</span>
-# MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:44px; border-radius:10px; background:#500000; font-weight:800; font-size:16px;">TAMU</span>
+# MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:44px; border-radius:10px; background:#00A972; font-weight:800; font-size:16px;">Smart Campus</span>
 # MAGIC   <div>
 # MAGIC     <div style="font-size:22px; font-weight:700;">Smart Community Testbed on Databricks</div>
-# MAGIC     <div style="font-size:14px; opacity:0.85;">TAMU Smart Campus Workshop · College Station, November 2026</div>
+# MAGIC     <div style="font-size:14px; opacity:0.85;">Smart Campus Workshop · campus set by <code>CAMPUS</code> in <code>Includes/Classroom-Setup-Common</code></div>
 # MAGIC   </div>
 # MAGIC </div>
 
@@ -17,8 +17,8 @@
 # MAGIC ## Overview
 # MAGIC
 # MAGIC This workshop takes you end-to-end on the Databricks Data Intelligence Platform using
-# MAGIC **synthetic cellular-tower and smart-campus data** for the Texas A&M campus in College Station. It's the
-# MAGIC same kind of data you'll work with in the TAMU Datathon on **transit** and
+# MAGIC **synthetic cellular-tower and smart-campus data** for a real university campus (the setup
+# MAGIC cell in each lab shows which one). It's the same kind of data you'll work with in the datathon on **transit** and
 # MAGIC **security** use cases.
 # MAGIC
 # MAGIC You will generate a realistic dataset, clean and conform it with the **medallion

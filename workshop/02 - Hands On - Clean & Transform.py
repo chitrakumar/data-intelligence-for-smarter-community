@@ -2,7 +2,7 @@
 # MAGIC %md-sandbox
 # MAGIC <div style="display:flex; align-items:center; gap:16px; padding:18px 22px; background:linear-gradient(135deg,#1B3139 0%,#1B5162 100%); border-radius:12px; color:#fff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 # MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:10px; background:#FF3621; font-weight:800; font-size:18px;">DB</span>
-# MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:40px; border-radius:10px; background:#500000; font-weight:800; font-size:15px;">TAMU</span>
+# MAGIC   <span style="display:inline-flex; align-items:center; justify-content:center; padding:0 12px; height:40px; border-radius:10px; background:#00A972; font-weight:800; font-size:15px;">Smart Campus</span>
 # MAGIC   <div style="font-size:15px; font-weight:600; opacity:0.9;">Smart Community Testbed on Databricks · Lab 02</div>
 # MAGIC </div>
 
@@ -11,7 +11,7 @@
 # MAGIC %md
 # MAGIC # Lab 02: Ingest the Geodata &amp; Clean to Silver
 # MAGIC
-# MAGIC Two jobs this lab. First, **ingest** the real Texas A&M campus geodata (OpenStreetMap) sitting in your Volume into
+# MAGIC Two jobs this lab. First, **ingest** the real campus geodata (OpenStreetMap) sitting in your Volume into
 # MAGIC dimension tables (`dim_buildings`, `dim_zones`). It's your first hands-on "load from a source."
 # MAGIC Then promote all of Bronze (the telemetry from setup **plus** your new dimensions) into a
 # MAGIC trustworthy **Silver** layer.
@@ -19,7 +19,7 @@
 # MAGIC ## Objectives
 # MAGIC - **Ingest** the OpenStreetMap GeoJSON from a Volume into `dim_buildings` + `dim_zones`
 # MAGIC - Apply the core cleaning moves: **de-duplicate**, **validate**, **handle nulls**, **conform keys**
-# MAGIC - Validate every building sits inside the **TAMU bounding box**
+# MAGIC - Validate every building sits inside the **campus bounding box**
 # MAGIC - Write cleaned **Silver** tables that the app and Genie will read
 # MAGIC
 # MAGIC ## Agenda
@@ -38,12 +38,12 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## B. Ingest the Texas A&M campus geodata
+# MAGIC ## B. Ingest the campus geodata
 # MAGIC
 # MAGIC The one piece of **real** data is the OpenStreetMap in your Volume. We read the GeoJSON,
 # MAGIC pull out the fields we want, compute a centroid for each polygon, and write two
 # MAGIC **Bronze** dimension tables: `dim_buildings` and `dim_zones`. Crucially,
-# MAGIC `buildings.geojson` carries `BLDG_UID` (`TBL10xxx`), the **same key** the telemetry
+# MAGIC `buildings.geojson` carries `BLDG_UID` (e.g. `TBL10001`), the **same key** the telemetry
 # MAGIC uses, so these dimensions join cleanly to everything else.
 
 # COMMAND ----------
@@ -154,7 +154,7 @@ def in_campus_bbox(lat_col="latitude", lon_col="longitude"):
 # MAGIC %md
 # MAGIC ## D. Clean the dimensions: `dim_buildings`
 # MAGIC The building dimension anchors the whole model, so we clean it first: keep one row per
-# MAGIC `bldg_uid`, and only rows with valid TAMU coordinates. (`dim_zones` is cleaned with the
+# MAGIC `bldg_uid`, and only rows with valid campus coordinates. (`dim_zones` is cleaned with the
 # MAGIC rest in section F.)
 
 # COMMAND ----------
