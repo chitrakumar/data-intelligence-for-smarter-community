@@ -31,8 +31,15 @@ _ref_src = f"/Workspace{_lab_dir}/Includes/reference_code/app"
 reference_app_path = copy_folder(src=_ref_src, dst=home("smart-campus-app"), clean=True)
 
 # Bundle the active campus profile (campus.json + geojson) into the app at
-# server/campus/, which is where server/campus.py loads it from at runtime.
+# server/campus/, which is where server/campus_profile.py loads it from at runtime.
 copy_folder(src=CAMPUS_CONFIG["_dir"], dst=f"{reference_app_path}/server/campus", clean=True)
+
+# The pre-built frontend bundle was compiled for TAMU; swap its map center, brand
+# color and campus names for the active campus (edits only this copy, not the repo).
+from frontend_branding import apply_branding
+_branded = apply_branding(f"{reference_app_path}/frontend/dist", CAMPUS_CONFIG)
+if _branded:
+    print(f"🎨 Frontend re-branded for {CAMPUS_NAME}: {sum(_branded.values())} replacements in {len(_branded)} files")
 
 # COMMAND ----------
 

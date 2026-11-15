@@ -95,3 +95,115 @@ def load_campus(campus: Union[str, Path], base: Optional[Path] = None) -> Dict[s
 
 def geojson_path(cfg: Dict[str, Any], kind: str) -> Path:
     return Path(cfg["_geojson_dir"]) / GEOJSON_FILES[kind]
+
+
+# ----------------------------------------------------------------------------- deep checks
+BLDG_USAGE_VALUES = {
+    "Housing", "StudentHousing", "Academic", "Research", "Services", "Operations",
+    "Administrative", "Athletics", "Commons", "Parking", "Commercial", "Other",
+}
+_REQUIRED_PROPS = {
+    "buildings": ("BLDG_UID", "NAME", "CONSTR_STATUS", "BLDG_USAGE"),
+    "complexes": ("BCOM_UID", "NAME"),
+    "neighbourhoods": ("NAME",),
+}
+
+
+def _centroid(geom: Dict[str, Any]):
+    """Mean of all coordinates (same rule Lab 02 uses to place a building)."""
+    t, c = geom.get("type"), geom.get("coordinates") or []
+    rings = c if t == "Polygon" else [r for poly in c for r in poly] if t == "MultiPolygon" else []
+    pts = [p for r in rings for p in r]
+    if not pts:
+        return None
+    return sum(p[1] for p in pts) / len(pts), sum(p[0] for p in pts) / len(pts)
+
+
+def check_profile(cfg: Dict[str, Any]):
+    """Deeper consistency checks on a loaded profile.
+
+    Returns (errors, warnings). Errors will break a lab or the app; warnings are worth a look.
+    """
+    import re
+    from datetime import datetime
+
+    errors, warnings = [], []
+    cdir = Path(cfg["_dir"])
+    if cfg["slug"] != cdir.name:
+        errors.append(f"slug '{cfg['slug']}' does not match folder name '{cdir.name}'")
+    color = (cfg.get("branding") or {}).get("primary_color", "")
+    if not re.fullmatch(r"#[0-9A-Fa-f]{6}", color or ""):
+        errors.append(f"branding.primary_color must be a #RRGGBB hex color, got {color!r}")
+
+    bb = cfg["map"]["bbox"]
+    inside = lambda lat, lon: bb["lat_min"] <= lat <= bb["lat_max"] and bb["lon_min"] <= lon <= bb["lon_max"]  # noqa: E731
+
+    win = cfg["data_window"]
+    try:
+        end = datetime.fromisoformat(win["end"])
+        cs, ce = datetime.fromisoformat(win["study_crunch_start"]), datetime.fromisoformat(win["study_crunch_end"])
+        from datetime import timedelta
+        start = end - timedelta(days=int(win["days"]))
+        if not (start <= cs < ce <= end):
+            warnings.append(f"study crunch {cs:%Y-%m-%d}..{ce:%Y-%m-%d} is not inside the data window "
+                            f"{start:%Y-%m-%d}..{end:%Y-%m-%d}")
+    except (ValueError, TypeError) as e:
+        errors.append(f"data_window dates must be ISO timestamps: {e}")
+
+    gj = {}
+    for kind in ("buildings", "complexes", "neighbourhoods"):
+        with geojson_path(cfg, kind).open("r", encoding="utf-8") as f:
+            gj[kind] = json.load(f).get("features", [])
+        if not gj[kind]:
+            errors.append(f"{GEOJSON_FILES[kind]} has no features")
+        for i, ft in enumerate(gj[kind]):
+            props = ft.get("properties") or {}
+            missing = [k for k in _REQUIRED_PROPS[kind] if props.get(k) in (None, "")]
+            if missing:
+                errors.append(f"{GEOJSON_FILES[kind]} feature #{i} ({props.get('NAME')!r}) missing {missing}")
+                break
+            if (ft.get("geometry") or {}).get("type") not in ("Polygon", "MultiPolygon"):
+                errors.append(f"{GEOJSON_FILES[kind]} feature {props.get('NAME')!r} is not a (Multi)Polygon")
+                break
+
+    bld = [f["properties"] for f in gj["buildings"]]
+    for key in ("BLDG_UID", "NAME"):
+        dups = sorted({p[key] for p in bld if [q[key] for q in bld].count(p[key]) > 1})
+        if dups:
+            errors.append(f"buildings.geojson has duplicate {key}: {dups[:5]}")
+    complete = [f for f in gj["buildings"] if f["properties"].get("CONSTR_STATUS") == "Complete"]
+    if len(complete) < 30:
+        warnings.append(f"only {len(complete)} buildings with CONSTR_STATUS='Complete' (TAMU has 321)")
+    outside = [f["properties"]["NAME"] for f in complete
+               if (c := _centroid(f["geometry"])) and not inside(*c)]
+    if outside:
+        warnings.append(f"{len(outside)} building(s) outside map.bbox will be dropped in Lab 02: {outside[:5]}")
+    bad_usage = sorted({p["BLDG_USAGE"] for p in bld} - BLDG_USAGE_VALUES)
+    if bad_usage:
+        warnings.append(f"BLDG_USAGE values outside the vocabulary become 'Other': {bad_usage}")
+    if not any(p["BLDG_USAGE"] in ("StudentHousing", "Housing") for p in bld):
+        warnings.append("no StudentHousing buildings: residence-hall views in the app will be empty")
+    zone_names = {f["properties"]["NAME"] for f in gj["neighbourhoods"]}
+    unknown_nbhd = sorted({p.get("NEIGHBOURHOOD") for p in bld if p.get("NEIGHBOURHOOD")} - zone_names)
+    if unknown_nbhd:
+        warnings.append(f"buildings reference NEIGHBOURHOOD values with no zone polygon: {unknown_nbhd}")
+
+    for s in cfg["cell_sites"]:
+        if not inside(float(s["lat"]), float(s["lon"])):
+            errors.append(f"cell site {s['site_id']} ({s['name']}) is outside map.bbox")
+    names = {"buildings": {p["NAME"] for p in bld},
+             "complexes": {f["properties"]["NAME"] for f in gj["complexes"]},
+             "neighbourhoods": zone_names}
+    for z in cfg.get("landmark_zones", []):
+        if not inside(float(z["lat"]), float(z["lon"])):
+            errors.append(f"landmark {z['zone_id']} ({z['name']}) is outside map.bbox")
+        fp = z.get("footprint")
+        if fp:
+            pool = names.get(fp.get("source"), set())
+            target = fp.get("name", "")
+            hit = (any(target.lower() in n.lower() or n.lower() in target.lower() for n in pool)
+                   if fp.get("contains") else target.lower() in {n.lower() for n in pool})
+            if not hit:
+                warnings.append(f"landmark {z['name']!r}: footprint {fp.get('source')}/{target!r} not found "
+                                f"(the app will draw a circle instead)")
+    return errors, warnings

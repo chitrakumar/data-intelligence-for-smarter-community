@@ -67,6 +67,14 @@ or a **Vocareum** lab account. Specifically:
 
 ---
 
+## 🏫 Run it for your campus
+
+The campus is a config switch. See **[NEW_CAMPUS.md](NEW_CAMPUS.md)**: generate a profile from
+OpenStreetMap with `tools/new_campus.py`, review it, set `CAMPUS = "<slug>"`, and run the labs.
+Texas A&M (`tamu`) and Baylor (`baylor`) are included.
+
+---
+
 ## 📎 Notes
 
 - **Lab 05 (Genie)** has a couple of UI steps: you create the Genie agent in the UI and

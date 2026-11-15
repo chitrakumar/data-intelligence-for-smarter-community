@@ -1,0 +1,276 @@
+{
+  "slug": "baylor",
+  "name": "Baylor University",
+  "short_name": "Baylor",
+  "city": "Waco, TX",
+  "event_name": "Baylor Datathon",
+  "branding": {
+    "primary_color": "#154734"
+  },
+  "map": {
+    "center": {
+      "lat": 31.548,
+      "lon": -97.1174
+    },
+    "bbox": {
+      "lat_min": 31.5395,
+      "lat_max": 31.5631,
+      "lon_min": -97.1309,
+      "lon_max": -97.0977
+    },
+    "bbox_description": "Baylor University campus (OSM way/163627351) plus 150 m",
+    "meters_per_degree_lon": 94867.2
+  },
+  "data_window": {
+    "end": "2026-11-06T00:00:00",
+    "days": 30,
+    "study_crunch_start": "2026-10-26T00:00:00",
+    "study_crunch_end": "2026-11-01T23:59:59"
+  },
+  "landmark_zones": [
+    {
+      "zone_id": "ZONE_01",
+      "name": "McLane Stadium",
+      "type": "recreational",
+      "lat": 31.5582,
+      "lon": -97.1156,
+      "footprint": {
+        "source": "buildings",
+        "name": "McLane Stadium"
+      }
+    },
+    {
+      "zone_id": "ZONE_02",
+      "name": "McLane Student Life Center",
+      "type": "transit",
+      "lat": 31.5476,
+      "lon": -97.1142,
+      "footprint": {
+        "source": "buildings",
+        "name": "McLane Student Life Center"
+      }
+    },
+    {
+      "zone_id": "ZONE_03",
+      "name": "Mayborn Museum Complex",
+      "type": "academic",
+      "lat": 31.5521,
+      "lon": -97.1148,
+      "footprint": {
+        "source": "buildings",
+        "name": "Mayborn Museum Complex"
+      }
+    },
+    {
+      "zone_id": "ZONE_04",
+      "name": "Paul L. Foster Campus for Business and Innovation",
+      "type": "academic",
+      "lat": 31.5452,
+      "lon": -97.1153,
+      "footprint": {
+        "source": "buildings",
+        "name": "Paul L. Foster Campus for Business and Innovation"
+      }
+    },
+    {
+      "zone_id": "ZONE_05",
+      "name": "Penland Residence Hall",
+      "type": "residential",
+      "lat": 31.5486,
+      "lon": -97.1214,
+      "footprint": {
+        "source": "buildings",
+        "name": "Penland Residence Hall"
+      }
+    },
+    {
+      "zone_id": "ZONE_06",
+      "name": "Baylor Sciences Building",
+      "type": "academic",
+      "lat": 31.548,
+      "lon": -97.113,
+      "footprint": {
+        "source": "buildings",
+        "name": "Baylor Sciences Building"
+      }
+    },
+    {
+      "zone_id": "ZONE_07",
+      "name": "Dutton Parking Garage",
+      "type": "transit",
+      "lat": 31.5514,
+      "lon": -97.1187,
+      "footprint": {
+        "source": "buildings",
+        "name": "Dutton Parking Garage"
+      }
+    },
+    {
+      "zone_id": "ZONE_08",
+      "name": "Sid Richardson Building",
+      "type": "academic",
+      "lat": 31.5475,
+      "lon": -97.118,
+      "footprint": {
+        "source": "buildings",
+        "name": "Sid Richardson Building"
+      }
+    },
+    {
+      "zone_id": "ZONE_09",
+      "name": "Foster Pavilion",
+      "type": "recreational",
+      "lat": 31.5564,
+      "lon": -97.1214,
+      "footprint": {
+        "source": "buildings",
+        "name": "Foster Pavilion"
+      }
+    },
+    {
+      "zone_id": "ZONE_10",
+      "name": "Allison Indoor Football Practice Facility",
+      "type": "recreational",
+      "lat": 31.5529,
+      "lon": -97.112,
+      "footprint": {
+        "source": "buildings",
+        "name": "Allison Indoor Football Practice Facility"
+      }
+    },
+    {
+      "zone_id": "ZONE_11",
+      "name": "Ferrell Center",
+      "type": "recreational",
+      "lat": 31.548,
+      "lon": -97.1057,
+      "footprint": {
+        "source": "buildings",
+        "name": "Ferrell Center"
+      }
+    },
+    {
+      "zone_id": "ZONE_12",
+      "name": "Hankamer-Cashion Academic Center",
+      "type": "academic",
+      "lat": 31.5462,
+      "lon": -97.1182,
+      "footprint": {
+        "source": "buildings",
+        "name": "Hankamer-Cashion Academic Center"
+      }
+    },
+    {
+      "zone_id": "ZONE_13",
+      "name": "Sheila and Walter Umphrey Law Center",
+      "type": "academic",
+      "lat": 31.5541,
+      "lon": -97.1155,
+      "footprint": {
+        "source": "buildings",
+        "name": "Sheila and Walter Umphrey Law Center"
+      }
+    },
+    {
+      "zone_id": "ZONE_14",
+      "name": "Waco Hall",
+      "type": "academic",
+      "lat": 31.5439,
+      "lon": -97.1191,
+      "footprint": {
+        "source": "buildings",
+        "name": "Waco Hall"
+      }
+    },
+    {
+      "zone_id": "ZONE_15",
+      "name": "Hooper-Schaefer Fine Arts Center",
+      "type": "academic",
+      "lat": 31.5499,
+      "lon": -97.1147,
+      "footprint": {
+        "source": "buildings",
+        "name": "Hooper-Schaefer Fine Arts Center"
+      }
+    },
+    {
+      "zone_id": "ZONE_16",
+      "name": "Simpson Athletics and Academic Center",
+      "type": "recreational",
+      "lat": 31.5515,
+      "lon": -97.113,
+      "footprint": {
+        "source": "buildings",
+        "name": "Simpson Athletics and Academic Center"
+      }
+    }
+  ],
+  "cell_sites": [
+    {
+      "site_id": "SITE_01",
+      "name": "Near McLane Stadium",
+      "lat": 31.5588,
+      "lon": -97.1144
+    },
+    {
+      "site_id": "SITE_02",
+      "name": "Near Foster Pavilion",
+      "lat": 31.5558,
+      "lon": -97.1228
+    },
+    {
+      "site_id": "SITE_03",
+      "name": "Near Allison Indoor Football Practice Facility",
+      "lat": 31.5522,
+      "lon": -97.113
+    },
+    {
+      "site_id": "SITE_04",
+      "name": "Near Penland Residence Hall",
+      "lat": 31.55,
+      "lon": -97.1181
+    },
+    {
+      "site_id": "SITE_05",
+      "name": "Near Ferrell Center",
+      "lat": 31.549,
+      "lon": -97.1061
+    },
+    {
+      "site_id": "SITE_06",
+      "name": "Near Baylor Sciences Building",
+      "lat": 31.5485,
+      "lon": -97.1146
+    },
+    {
+      "site_id": "SITE_07",
+      "name": "Near Engineering Research Annex",
+      "lat": 31.5457,
+      "lon": -97.129
+    },
+    {
+      "site_id": "SITE_08",
+      "name": "Near Bill Daniel Student Center (SUB)",
+      "lat": 31.5455,
+      "lon": -97.1225
+    },
+    {
+      "site_id": "SITE_09",
+      "name": "Near Hankamer-Cashion Academic Center",
+      "lat": 31.5455,
+      "lon": -97.1188
+    },
+    {
+      "site_id": "SITE_10",
+      "name": "Near Paul L. Foster Campus for Business and Innovation",
+      "lat": 31.5447,
+      "lon": -97.1131
+    }
+  ],
+  "attribution": "Map data © OpenStreetMap contributors (ODbL). Neighbourhood zones, landmarks and cell sites were generated automatically for this demo and are not official Baylor University data.",
+  "generated_by": {
+    "tool": "tools/new_campus.py",
+    "boundary": "way/163627351",
+    "osm_timestamp": "2026-11-15T04:42:50Z"
+  }
+}

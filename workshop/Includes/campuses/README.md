@@ -22,6 +22,7 @@ campuses/<slug>/
 | Geodata Volume (Lab 01/02 ingest) | `buildings.geojson`, `neighbourhoods.geojson` |
 | Lab 02 bounding-box check | `campus.json` `map.bbox` |
 | App backend (Lab 06 bundles the profile into `server/campus/`) | geojson, `landmark_zones[].footprint`, `short_name`; `/api/campus` exposes name, branding, center and bbox |
+| App frontend (Lab 06 re-brands the compiled bundle copy) | `name`, `short_name`, `city`, `map.center`, `branding.primary_color` |
 
 Bronze telemetry is tagged with the campus it was generated for
 (`workshop.campus` table property on `sc_access_events`), so changing `CAMPUS` regenerates it on
@@ -29,33 +30,35 @@ the next lab setup run.
 
 ## Adding a new school
 
-1. `cp -R campuses/tamu campuses/<slug>`
-2. **Geodata.** Export the campus from OpenStreetMap (e.g. Overpass or OSMnx) and convert it to the
-   property names below. Keep the ODbL attribution.
+See [`NEW_CAMPUS.md`](../../../NEW_CAMPUS.md) at the repo root. In short:
 
-   | File | Properties used |
-   |---|---|
-   | `buildings.geojson` | `BLDG_UID` (unique, used as `bldg_uid` everywhere), `NAME`, `CONSTR_STATUS` (only `"Complete"` rows are used), `BLDG_USAGE`, `MAX_FLOORS`, `BLDG_CODE`, `PRIMARY_ADDRESS`, `NEIGHBOURHOOD` |
-   | `complexes.geojson` | `BCOM_UID`, `NAME`, `GBA`, `UNITS`, `USAGE_TYPE` |
-   | `neighbourhoods.geojson` | `ID`, `NAME` (Polygon) |
+```bash
+python3 tools/new_campus.py --slug <slug> --name "<Full Name>" --short-name <Short> \
+    --city "<City, ST>" --boundary way/<osm-id> --primary-color "#RRGGBB"
+python3 tools/validate_campus.py <slug>
+```
 
-   `BLDG_USAGE` values map to categories via: `Housing`, `StudentHousing`, `Academic`, `Research`,
-   `Services`, `Operations`, `Administrative`, `Athletics`, `Commons`, `Parking`, `Commercial`
-   (anything else becomes `Other`).
-3. **`campus.json`.** Update:
-   - `slug` (must match the folder name), `name`, `short_name`, `city`, `event_name`, `branding.primary_color`
-   - `map.center`, `map.bbox` (must contain every building you want kept; the center must sit inside the bbox)
-   - `map.meters_per_degree_lon`: about `111320 * cos(center latitude)`. You can delete it to have that computed.
-   - `data_window`: the 30-day window end date and the "study crunch" week (exam period) inside it
-   - `cell_sites`: about 10 synthetic tower locations spread across the campus
-   - `landmark_zones`: named landmarks; `footprint` points at a building `NAME` in the geojson, or `null` for a circle
-   - `attribution`
-4. Set `CAMPUS = "<slug>"` in `Classroom-Setup-Common.py` and run Lab 01. `load_campus()` validates
-   the profile and fails early with a clear message if keys or files are missing.
+Then review the generated names, set `CAMPUS = "<slug>"` and run the labs.
+
+### Building a profile by hand
+
+If you don't use `tools/new_campus.py`, the files must use these properties:
+
+| File | Properties used |
+|---|---|
+| `buildings.geojson` | `BLDG_UID` (unique, used as `bldg_uid` everywhere), `NAME` (unique), `CONSTR_STATUS` (only `"Complete"` rows are used), `BLDG_USAGE`, `MAX_FLOORS`, `BLDG_CODE`, `PRIMARY_ADDRESS`, `NEIGHBOURHOOD` |
+| `complexes.geojson` | `BCOM_UID`, `NAME`, `GBA`, `UNITS`, `USAGE_TYPE` |
+| `neighbourhoods.geojson` | `ID`, `NAME` (Polygon) |
+
+`BLDG_USAGE` vocabulary: `Housing`, `StudentHousing`, `Academic`, `Research`, `Services`,
+`Operations`, `Administrative`, `Athletics`, `Commons`, `Parking`, `Commercial`, `Other`.
+
+In `campus.json`: `map.center` must be inside `map.bbox`, and every building, landmark and
+cell site you care about must be inside the bbox too (Lab 02 drops anything outside).
 
 ## Not yet driven by the profile
 
 - **App frontend** (`reference_code/app/frontend/dist/`): only the compiled bundle is in the repo.
-  The map center, maroon color, "TAMU" badge/title and dataset descriptions are baked into
-  `assets/index-*.js`. Once the React source is available, it should read `/api/campus` instead.
+  Lab 06 patches the student's copy (`frontend_branding.py`: map center, brand color, campus
+  names, building count). Once the React source is available, it should read `/api/campus` instead.
 - **Notebook prose** (lab markdown, header color, the course README): still TAMU-specific text.
